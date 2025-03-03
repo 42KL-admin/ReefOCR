@@ -25,10 +25,10 @@ const upload = multer({
 });
 
 const client = new DocumentAnalysisClient(
-  process.env.FORM_RECOGNIZER_ENDPOINT || "https://gamma.cognitiveservices.azure.com/",
-  new AzureKeyCredential(process.env.FORM_RECOGNIZER_API_KEY || "e6b004bbb26842c19e833453f51efce1")
+  process.env.FORM_RECOGNIZER_ENDPOINT,
+  new AzureKeyCredential(process.env.FORM_RECOGNIZER_API_KEY)
 );
-const modelId = process.env.FORM_RECOGNIZER_CUSTOM_MODEL_ID || "ReefReleasePreview";
+const modelId = process.env.FORM_RECOGNIZER_CUSTOM_MODEL_ID;
 
 app.use(express.static('public'));
 app.use(express.json());
