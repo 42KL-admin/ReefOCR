@@ -1,5 +1,4 @@
-# Reef OCR System: Implementation & Maintenance Guide
-
+# Reef OCR System
 ## Project Handover Notice
 
 **IMPORTANT**: I am officially stepping back from maintaining this project due to educational commitments and work obligations. Full ownership and maintenance responsibilities are being transferred to 42KL, who will oversee all future development and support.
