@@ -27,40 +27,149 @@ The system follows a modular architecture as shown in the flowchart below:
 
 ```mermaid
 flowchart TD
-    A[Client Request] --> B{Request Type}
-    B -->|File Upload| C[Upload Middleware]
-    B -->|URL Processing| D[URL Download]
+    %% Main Request Flow
+    Client([Web Browser/API Client]) --> WebServer[Express Web Server]
+    WebServer --> Routes{API Routes}
     
-    C --> E[Image Preprocessing]
-    D --> E
+    %% Request Paths
+    Routes -->|GET /| UI[Render UI]
+    Routes -->|POST /api/upload| Upload[Upload Handler]
+    Routes -->|POST /api/process-url| URLProc[URL Handler]
+    Routes -->|GET /api/health| Health[Health Check]
     
-    E --> F[Azure Form Recognizer]
-    F --> G[Document Analysis]
+    %% File Processing Path
+    Upload --> Multer[Multer Middleware]
+    Multer --> ValidateFile{Validate File}
+    ValidateFile -->|Invalid| ErrorResp1[Return Error]
+    ValidateFile -->|Valid| SaveTemp[Save to Temp]
     
-    G --> H{Document Type}
-    H -->|Old Format| I[Process Segment Data]
-    H -->|New Format| J[Process Species Data]
+    %% URL Processing Path
+    URLProc --> ValidateURL{Validate URL}
+    ValidateURL -->|Invalid| ErrorResp2[Return Error]
+    ValidateURL -->|Valid| DownloadImg[Download Image]
+    DownloadImg --> SaveTemp
     
-    I --> K[Generate Excel Report]
-    J --> K
+    %% Image Processing
+    SaveTemp --> OCRService[OCR Service]
+    OCRService --> ImgPreproc[Image Preprocessing]
     
-    K --> L[Generate Validation Reports]
-    L --> M[Return Result to Client]
-
     subgraph "Image Enhancement Pipeline"
-        E -->|Low Quality| E1[Special Processing]
-        E -->|Dark Image| E2[Brightness Enhancement]
-        E -->|Standard| E3[Normal Processing]
-        E1 --> E4[Enhanced Image]
-        E2 --> E4
-        E3 --> E4
+        ImgPreproc --> AnalyzeImg[Analyze Image Quality]
+        AnalyzeImg --> ImgStrategy{Select Strategy}
+        
+        ImgStrategy -->|Low Resolution| UpscaleImg[Upscale + Enhance]
+        ImgStrategy -->|Dark Image| BrightenImg[Brightness + Contrast]
+        ImgStrategy -->|Normal| StandardProc[Standard Processing]
+        ImgStrategy -->|Very Poor| MultiStrategy[Try Multiple Strategies]
+        
+        UpscaleImg --> Grayscale[Convert to Grayscale]
+        BrightenImg --> Grayscale
+        StandardProc --> Grayscale
+        MultiStrategy --> SelectBest[Select Best Result]
+        SelectBest --> Grayscale
+        
+        Grayscale --> Normalize[Normalize]
+        Normalize --> Sharpen[Sharpen]
+        Sharpen --> Threshold[Threshold]
+        Threshold --> OutputImg[Preprocessed Image]
     end
     
-    subgraph "Azure Services"
-        F --> F1[Layout Analysis]
-        F --> F2[Form Recognition]
-        F --> F3[Table Extraction]
+    %% Azure Processing
+    OutputImg --> AzureService[Azure Service]
+    
+    subgraph "Azure Form Recognizer"
+        AzureService --> CreateClient[Create Azure Client]
+        CreateClient --> UploadDoc[Upload Document]
+        UploadDoc --> StartAnalysis[Begin Analysis]
+        StartAnalysis --> PollResults[Poll for Results]
+        PollResults --> CheckSuccess{Success?}
+        CheckSuccess -->|No| RetryOrFail{Retry?}
+        RetryOrFail -->|Yes| StartAnalysis
+        RetryOrFail -->|No| FailAzure[Throw Azure Error]
+        CheckSuccess -->|Yes| ProcessResults[Process Results]
     end
+    
+    %% Data Extraction
+    ProcessResults --> DataExtractionService[Data Extraction]
+    
+    subgraph "Data Processing"
+        DataExtractionService --> ExtractFields[Extract Form Fields]
+        ExtractFields --> DetectVersion{Detect Form Version}
+        
+        DetectVersion -->|Old Format| ProcessSegments[Process Segment Data]
+        DetectVersion -->|New Format| ProcessSpecies[Process Species Data]
+        
+        ProcessSegments --> ValidateCodes[Validate Substrate Codes]
+        ValidateCodes --> FillBlanks[Fill Blank Fields]
+        FillBlanks --> CalculateStats[Calculate Statistics]
+        
+        ProcessSpecies --> ExtractTables[Extract Tables]
+        ExtractTables --> ProcessTables[Process Table Data]
+    end
+    
+    %% Report Generation
+    ProcessTables --> ReportService[Report Service]
+    CalculateStats --> ReportService
+    
+    subgraph "Report Generation"
+        ReportService --> CreateWorkbook[Create Excel Workbook]
+        CreateWorkbook --> AddFields[Add Fields Section]
+        
+        AddFields --> CheckVersion{Form Version}
+        CheckVersion -->|Old Format| AddSegments[Add Segment Tables]
+        CheckVersion -->|New Format| AddSpecies[Add Species Tables]
+        
+        AddSegments --> AddLegend[Add Substrate Legend]
+        AddLegend --> AddStats[Add Statistics]
+        
+        AddSpecies --> FormatWorksheet[Format Worksheet]
+        AddStats --> FormatWorksheet
+        
+        FormatWorksheet --> SaveExcel[Save Excel File]
+        SaveExcel --> JsonRequested{JSON Requested?}
+        JsonRequested -->|Yes| SaveJSON[Save JSON Data]
+        JsonRequested -->|No| SkipJSON[Skip JSON]
+        
+        SaveJSON --> GenerateCSV[Generate CSV Reports]
+        SkipJSON --> GenerateCSV
+    end
+    
+    %% Response Handling
+    GenerateCSV --> PrepareResponse[Prepare Response]
+    PrepareResponse --> ReturnType{Return Type}
+    ReturnType -->|Excel Only| SendExcel[Send Excel File]
+    ReturnType -->|With JSON| CreateZIP[Create ZIP Archive]
+    CreateZIP --> SendZIP[Send ZIP File]
+    
+    %% Error Handling Paths
+    SendExcel --> Cleanup[Cleanup Temp Files]
+    SendZIP --> Cleanup
+    Cleanup --> End([End Request])
+    
+    ErrorResp1 --> End
+    ErrorResp2 --> End
+    FailAzure --> ErrorHandling[Error Handling Middleware]
+    ErrorHandling --> End
+    
+    %% Error Handling Throughout System
+    OCRService -->|Error| ErrorHandling
+    ImgPreproc -->|Error| ErrorHandling
+    AzureService -->|Error| ErrorHandling
+    DataExtractionService -->|Error| ErrorHandling
+    ReportService -->|Error| ErrorHandling
+    
+    %% Style Definitions
+    classDef process fill:#f9f9f9,stroke:#333,stroke-width:1px;
+    classDef decision fill:#e1f5fe,stroke:#01579b,stroke-width:1px;
+    classDef data fill:#e8f5e9,stroke:#2e7d32,stroke-width:1px;
+    classDef error fill:#ffebee,stroke:#c62828,stroke-width:1px;
+    classDef endpoint fill:#ede7f6,stroke:#4527a0,stroke-width:1px;
+    
+    class Client,WebServer,End endpoint;
+    class ValidateFile,ValidateURL,ImgStrategy,CheckSuccess,RetryOrFail,DetectVersion,CheckVersion,JsonRequested,ReturnType decision;
+    class SaveTemp,OutputImg,ProcessResults data;
+    class ErrorResp1,ErrorResp2,FailAzure,ErrorHandling error;
+    class Upload,URLProc,OCRService,ImgPreproc,AzureService,DataExtractionService,ReportService process;
 ```
 
 ## Setup Instructions
