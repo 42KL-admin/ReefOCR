@@ -26,7 +26,7 @@ The Reef OCR System is a specialized application designed to process reef survey
 The system follows a modular architecture as shown in the flowchart below:
 
 ```mermaid
-flowchart TD
+flowchart LR
     %% Main Request Flow
     Client([Web Browser/API Client]) --> WebServer[Express Web Server]
     WebServer --> Routes{API Routes}
