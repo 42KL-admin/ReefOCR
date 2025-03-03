@@ -1,4 +1,6 @@
 node_modules
 .env
-uploads/*
-output/*
+uploads/*.json
+uploads/*.xlsx
+output/*.tiff
+
