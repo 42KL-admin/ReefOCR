@@ -1,31 +1,36 @@
 {
-  "name": "coral",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ./ReefOCR/app.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "@azure/ai-form-recognizer": "^5.0.0",
-    "archiver": "^7.0.1",
-    "axios": "^1.7.2",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "exceljs": "^4.4.0",
-    "express": "^4.19.2",
-    "fs": "^0.0.1-security",
-    "maxios": "^1.0.4",
-    "multer": "^1.4.5-lts.1",
-    "node-cron": "^3.0.3",
-    "path": "^0.12.7",
-    "sharp": "^0.33.4",
-    "uuid": "^10.0.0",
-    "xlsx": "^0.18.5"
-  },
-  "devDependencies": {},
-  "description": ""
-}
+    "name": "coral-processor",
+    "version": "1.0.0",
+    "description": "Processes coral reef survey images using Azure Form Recognizer.",
+    "main": "server.js",
+    "scripts": {
+      "start": "node server.js",
+      "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+      "azure",
+      "form-recognizer",
+      "excel",
+      "image-processing",
+      "coral"
+    ],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+      "@azure/ai-form-recognizer": "^5.0.0",
+      "archiver": "^7.0.1", 
+      "axios": "^1.7.2", 
+      "cors": "^2.8.5", 
+      "dotenv": "^16.4.5", 
+      "exceljs": "^4.4.0", 
+      "express": "^4.19.2", 
+      "json2csv": "^6.0.0-alpha.2", 
+      "multer": "^1.4.5-lts.1", 
+      "node-cron": "^3.0.3", 
+      "sharp": "^0.33.4" 
+
+    },
+    "engines": {
+      "node": ">=14.0.0" 
+    }
+  }
